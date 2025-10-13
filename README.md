@@ -1,11 +1,31 @@
 # Valentine: (Schema-) Matching DataFrames Made Easy
 
-[![build](https://github.com/delftdata/valentine/actions/workflows/coverage.yml/badge.svg)](https://github.com/delftdata/valentine/actions/workflows/coverage.yml)
-[![codecov](https://codecov.io/gh/delftdata/valentine/branch/master/graph/badge.svg?token=4QR0X315CL)](https://codecov.io/gh/delftdata/valentine)
-[![PyPI version](https://badge.fury.io/py/valentine.svg)](https://badge.fury.io/py/valentine)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/valentine)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9|3.10|3.11|3.12|3.13-blue.svg)](https://www.python.org/downloads/release/python-380/)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/85cfebfc9c6a43359c5b2e56a5fdf3a3)](https://app.codacy.com/gh/delftdata/valentine/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+<p align="center">
+  <a href="https://github.com/delftdata/valentine/actions/workflows/build.yml">
+    <img src="https://github.com/delftdata/valentine/actions/workflows/build.yml/badge.svg" alt="Build">
+  </a>
+  <a href="https://codecov.io/gh/delftdata/valentine">
+    <img src="https://codecov.io/gh/delftdata/valentine/branch/master/graph/badge.svg?token=4QR0X315CL" alt="codecov">
+  </a>
+  <a href="https://app.codacy.com/gh/delftdata/valentine/dashboard">
+    <img src="https://app.codacy.com/project/badge/Grade/85cfebfc9c6a43359c5b2e56a5fdf3a3" alt="Codacy Badge">
+  </a>
+  <a href="https://pypi.org/project/valentine/">
+    <img src="https://img.shields.io/pypi/v/valentine.svg" alt="PyPI version">
+  </a>
+  <a href="https://pypi.org/project/valentine/">
+    <img src="https://img.shields.io/pypi/pyversions/valentine.svg" alt="Python versions">
+  </a>
+  <a href="https://pypi.org/project/valentine/">
+    <img src="https://img.shields.io/pypi/dm/valentine.svg" alt="PyPI downloads">
+  </a>
+  <a href="https://github.com/delftdata/valentine/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/delftdata/valentine.svg" alt="License">
+  </a>
+  <a href="https://delftdata.github.io/valentine/">
+    <img src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" alt="Docs">
+  </a>
+</p>
 
 A python package for capturing potential relationships among columns of different tabular datasets, which are given in the form of pandas DataFrames. Valentine is based on [Valentine: Evaluating Matching Techniques for Dataset Discovery](https://ieeexplore.ieee.org/abstract/document/9458921)
 
@@ -18,7 +38,7 @@ The original experimental suite version of Valentine, as first published for the
 ## Installation instructions
 ### Requirements
 
-*   *Python* >=3.9,<3.14
+*   *Python* >=3.10,<3.15
 *   *Java*: For the Coma matcher it is required to have java (jre) installed
 
 To install Valentine simply run:
