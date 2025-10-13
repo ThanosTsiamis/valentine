@@ -1,6 +1,6 @@
 # Valentine: (Schema-) Matching DataFrames Made Easy
 
-[![build](https://github.com/delftdata/valentine/actions/workflows/build.yml/badge.svg)](https://github.com/delftdata/valentine/actions/workflows/build.yml)
+[![build](https://github.com/delftdata/valentine/actions/workflows/coverage.yml/badge.svg)](https://github.com/delftdata/valentine/actions/workflows/coverage.yml)
 [![codecov](https://codecov.io/gh/delftdata/valentine/branch/master/graph/badge.svg?token=4QR0X315CL)](https://codecov.io/gh/delftdata/valentine)
 [![PyPI version](https://badge.fury.io/py/valentine.svg)](https://badge.fury.io/py/valentine)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/valentine)

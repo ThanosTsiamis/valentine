@@ -1,4 +1,4 @@
-name: CI (Build wheels + Test + Publish)
+name: CI (Build universal wheel + Test + Publish)
 
 on:
   push:
@@ -10,66 +10,34 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ---------- 1) Build wheels with cibuildwheel ----------
-  build_wheels:
-    name: Build wheels (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-
-    env:
-      # Build for CPython 3.10–3.14
-      CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
-      CIBW_SKIP: "pp* *-musllinux_* *i686 *-win32"
-      CIBW_ARCHS_MACOS: "universal2"
-      CIBW_ARCHS_LINUX: "x86_64"
-      CIBW_ARCHS_WINDOWS: "AMD64"
-
-      # Keep wheel-internal tests minimal to avoid Java in manylinux containers.
-      CIBW_TEST_COMMAND: "python -c \"import valentine; print(getattr(valentine, '__version__', 'ok'))\""
-
+  # 1) Build sdist + universal wheel (pure Python)
+  build_dist:
+    name: Build distributions
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # QEMU only needed if you later add aarch64, but harmless to keep off for now
-      - name: Set up QEMU (Linux only)
-        if: matrix.os == 'ubuntu-latest'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
-
-      - name: Set up Python (driver)
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
 
       - name: Install build tooling
         run: |
           python -m pip install --upgrade pip
-          pip install cibuildwheel==2.* build
+          pip install build
 
-      - name: Build wheels
-        run: python -m cibuildwheel --output-dir wheelhouse
-
-      - name: Build sdist (Linux only)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          python -m build --sdist --outdir dist
-          mkdir -p dist
-          cp wheelhouse/* dist/ || true
+      - name: Build sdist and wheel
+        run: python -m build --sdist --wheel --outdir dist
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: valentine-${{ matrix.os }}-artifacts
-          path: |
-            wheelhouse/*.whl
-            dist/*.tar.gz
-          if-no-files-found: ignore
+          name: dists
+          path: dist/*
 
-  # ---------- 2) Test from source on all OS/Python ----------
+  # 2) Test from source on all OS/Python
   test_source:
     name: Test (source) py${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -86,6 +54,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
+          cache: "pip"
 
       - uses: actions/setup-java@v4
         with:
@@ -93,25 +62,26 @@ jobs:
           java-version: '11'
 
       - name: Install package (from source)
-        run: pip install -U pip && pip install .
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
 
-      - name: Install test dependencies
+      - name: Install test deps
         run: pip install pytest==8.3.3
 
       - name: Run tests (unittest)
         run: python -m unittest discover tests
 
-  # ---------- 3) Test the BUILT wheels on all OS/Python ----------
-  test_wheels:
+  # 3) Test the built wheel on all OS/Python
+  test_wheel:
     name: Test (wheel) py${{ matrix.python-version }} on ${{ matrix.os }}
-    needs: [ build_wheels ]
+    needs: [ build_dist ]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         python-version: [ '3.10', '3.11', '3.12', '3.13', '3.14' ]
-
     steps:
       - uses: actions/checkout@v4
 
@@ -120,52 +90,52 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
+          cache: "pip"
 
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '11'
 
-      - name: Download OS-specific artifacts
+      - name: Download built dists
         uses: actions/download-artifact@v4
         with:
-          name: valentine-${{ matrix.os }}-artifacts
-          path: artifacts
+          name: dists
+          path: dists
 
       - name: Install built wheel
         shell: bash
         run: |
-          python -m pip install -U pip
-          # Install from the artifact dir; pip will pick the matching wheel for this Python/OS
-          python -m pip install artifacts || \
-          python -m pip install artifacts/*.whl
+          python -m pip install --upgrade pip
+          # Prefer wheel; fall back to sdist if needed
+          WHEEL=$(ls dists/*.whl | head -n 1 || true)
+          if [ -n "$WHEEL" ]; then
+            pip install "$WHEEL"
+          else
+            pip install dists/*.tar.gz
+          fi
 
-      - name: Install test dependencies
+      - name: Install test deps
         run: pip install pytest==8.3.3
 
       - name: Run tests (against installed wheel)
         run: python -m unittest discover tests
 
-  # ---------- 4) (Optional) Publish to PyPI on Release ----------
+  # 4) (Optional) Publish to PyPI on Release
   publish-to-pypi:
     name: Publish to PyPI
-    needs: [ build_wheels, test_source, test_wheels ]
+    needs: [ build_dist, test_source, test_wheel ]
     if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
-          path: dist
+          name: dists
+          path: upload
 
-      - name: Flatten artifacts
-        run: |
-          mkdir -p upload
-          find dist -type f -name "*.whl" -exec cp {} upload/ \;
-          find dist -type f -name "*.tar.gz" -exec cp {} upload/ \;
+      # Choose ONE of the two publishing approaches:
 
-      # Use ONE of the two publish approaches below:
-
-      # A) API token secret (simple):
+      # A) API token (simple)
       - name: Publish (PyPI via API token)
         if: env.USE_OIDC != '1'
         uses: pypa/gh-action-pypi-publish@v1.10.3
@@ -173,8 +143,7 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: upload
 
-      # B) Trusted Publisher / OIDC (recommended):
-      #    Configure Trusted Publisher in PyPI project settings first, then set a repo variable USE_OIDC=1
+      # B) Trusted Publisher / OIDC (recommended)
       - name: Publish (PyPI via OIDC)
         if: env.USE_OIDC == '1'
         uses: pypa/gh-action-pypi-publish@release/v1
