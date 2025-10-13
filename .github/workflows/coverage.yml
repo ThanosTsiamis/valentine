@@ -1,0 +1,51 @@
+name: coverage
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12']   # keep coverage on one stable Python; expand if you want
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Set up Java (for code paths using coma.jar)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install .        # or: pip install -e . if you prefer editable
+          pip install pytest==8.3.3 coverage==7.*
+
+      - name: Run tests with coverage
+        run: |
+          coverage run --branch --source=valentine -m pytest -q tests
+          coverage xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}   # required for v4
+          files: coverage.xml
+          verbose: true
+          fail_ci_if_error: true
+          flags: unit
