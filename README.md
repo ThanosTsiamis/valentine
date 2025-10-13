@@ -1,4 +1,5 @@
-# Valentine: (Schema-) Matching DataFrames Made Easy
+<h1 align="center">Valentine 💘</h1>
+<p align="center"><em>(Schema-) Matching DataFrames Made Easy</em></p>
 
 <p align="center">
   <a href="https://github.com/delftdata/valentine/actions/workflows/build.yml">
@@ -27,9 +28,13 @@
   </a>
 </p>
 
-A python package for capturing potential relationships among columns of different tabular datasets, which are given in the form of pandas DataFrames. Valentine is based on [Valentine: Evaluating Matching Techniques for Dataset Discovery](https://ieeexplore.ieee.org/abstract/document/9458921)
+---
+
+A Python package for capturing potential relationships among columns of different tabular datasets, given as pandas DataFrames.  
+Valentine is based on the paper [**Valentine: Evaluating Matching Techniques for Dataset Discovery**](https://ieeexplore.ieee.org/abstract/document/9458921).
 
 You can find more information about the research supporting Valentine [here](https://delftdata.github.io/valentine/).
+
 
 ## Experimental suite version
 
