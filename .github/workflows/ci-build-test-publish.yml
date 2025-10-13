@@ -34,7 +34,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dists
+          name: dist
           path: dist/*
 
   # 2) Test from source on all OS/Python
@@ -100,19 +100,19 @@ jobs:
       - name: Download built dists
         uses: actions/download-artifact@v4
         with:
-          name: dists
-          path: dists
+          name: dist
+          path: dist
 
       - name: Install built wheel
         shell: bash
         run: |
           python -m pip install --upgrade pip
           # Prefer wheel; fall back to sdist if needed
-          WHEEL=$(ls dists/*.whl | head -n 1 || true)
+          WHEEL=$(ls dist/*.whl | head -n 1 || true)
           if [ -n "$WHEEL" ]; then
             pip install "$WHEEL"
           else
-            pip install dists/*.tar.gz
+            pip install dist/*.tar.gz
           fi
 
       - name: Install test deps
@@ -121,31 +121,36 @@ jobs:
       - name: Run tests (against installed wheel)
         run: python -m unittest discover tests
 
-  # 4) (Optional) Publish to PyPI on Release
+  # 4) Publish to PyPI on Release (tag publish event)
   publish-to-pypi:
     name: Publish to PyPI
     needs: [ build_dist, test_source, test_wheel ]
     if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # Required for Trusted Publishers (OIDC)
+      contents: read
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download built artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: dists
-          path: upload
+          name: dist
+          path: dist
 
-      # Choose ONE of the two publishing approaches:
-
-      # A) API token (simple)
-      - name: Publish (PyPI via API token)
-        if: env.USE_OIDC != '1'
-        uses: pypa/gh-action-pypi-publish@v1.10.3
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          packages-dir: upload
-
-      # B) Trusted Publisher / OIDC (recommended)
+      # A) Trusted Publisher / OIDC (recommended)
       - name: Publish (PyPI via OIDC)
-        if: env.USE_OIDC == '1'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: upload
+          packages-dir: dist/
+          verify-metadata: true
+          skip-existing: false
+
+      # If you prefer token auth (not recomended) instead of OIDC, replace the step above with:
+      # - name: Publish (PyPI via API token)
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     user: __token__
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
+      #     packages-dir: dist/
+      #     verify-metadata: true
+      #     skip-existing: false
