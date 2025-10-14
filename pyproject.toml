@@ -14,6 +14,7 @@ maintainers = [
     { name = "Delft Data", email = "delftdatasystems@gmail.com" }
 ]
 license = { file = "LICENSE" }
+keywords = ["matching", "valentine", "schema matching", "dataset discovery", "coma", "cupid", "similarity flooding"]
 
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
@@ -48,7 +49,13 @@ Source = "https://github.com/delftdata/valentine"
 Issues = "https://github.com/delftdata/valentine/issues"
 
 [tool.setuptools]
-packages = ["valentine"]
+packages = { find = { include = ["valentine*"], exclude = ["tests*", "examples*"] } }
+include-package-data = true
+license-files = ["LICENSE"]
 
+# include the JAR and license files in the wheel
 [tool.setuptools.package-data]
-"valentine" = ["coma.jar"]
+"valentine.algorithms.coma" = [
+  "artifact/coma.jar",
+  "licenses/*",
+]
